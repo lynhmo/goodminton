@@ -38,9 +38,8 @@ interface StatCardProps {
 const StatCard: FC<StatCardProps> = ({ icon, label, value, badge, sub }) => (
   <Card
     sx={{
-      minWidth: { xs: 200, md: 'auto' },
-      flex: { xs: '0 0 auto', md: '1 1 0' },
-      scrollSnapAlign: 'start',
+      width: '100%',
+      minWidth: 0,
     }}
   >
     <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
@@ -70,7 +69,7 @@ const StatCard: FC<StatCardProps> = ({ icon, label, value, badge, sub }) => (
       <Typography variant="caption" sx={{ color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5, fontSize: '0.7rem', fontWeight: 600 }}>
         {label}
       </Typography>
-      <Typography variant="h4" sx={{ fontWeight: 700, fontSize: { xs: '1.375rem', md: '1.5rem' }, mt: 0.25 }}>
+      <Typography variant="h4" sx={{ fontWeight: 700, fontSize: { xs: '1.25rem', md: '1.5rem' }, mt: 0.25, overflowWrap: 'anywhere' }}>
         {value}
       </Typography>
       {sub && (
@@ -125,14 +124,14 @@ export const DashboardPage: FC = () => {
   ];
 
   return (
-    <Box>
+    <Box sx={{ width: '100%', maxWidth: '100%', overflowX: 'hidden' }}>
       {/* Welcome Header */}
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <Box>
-          <Typography variant="h2" sx={{ mb: 0.5 }}>
+      <Box sx={{ mb: 3, display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 1, justifyContent: 'space-between', alignItems: { xs: 'stretch', md: 'flex-start' }, minWidth: 0 }}>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography variant="h2" sx={{ mb: 0.5, overflowWrap: 'anywhere' }}>
             Chào mừng trở lại, {user?.displayName ?? 'Admin'}
           </Typography>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          <Typography variant="body2" sx={{ color: 'text.secondary', overflowWrap: 'anywhere' }}>
             Dưới đây là tóm tắt hoạt động của câu lạc bộ hôm nay.
           </Typography>
         </Box>
@@ -147,19 +146,14 @@ export const DashboardPage: FC = () => {
         </Box>
       </Box>
 
-      {/* Stat Cards — horizontal scroll on mobile, row on desktop */}
+      {/* Stat Cards */}
       <Box
         sx={{
-          display: 'flex',
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, minmax(0, 1fr))' },
           gap: 2,
           mb: 3,
-          overflowX: { xs: 'auto', md: 'visible' },
-          scrollSnapType: { xs: 'x mandatory', md: 'none' },
-          pb: { xs: 1, md: 0 },
-          mx: { xs: -2, md: 0 },
-          px: { xs: 2, md: 0 },
-          '&::-webkit-scrollbar': { height: 4 },
-          '&::-webkit-scrollbar-thumb': { bgcolor: 'divider', borderRadius: 2 },
+          minWidth: 0,
         }}
       >
         <StatCard
@@ -182,9 +176,9 @@ export const DashboardPage: FC = () => {
         />
       </Box>
 
-      <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', md: 'row' } }}>
+      <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', md: 'row' }, minWidth: 0 }}>
         {/* Left column */}
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
           {/* Next session banner */}
           {nextSession && (
             <Card
@@ -259,9 +253,10 @@ export const DashboardPage: FC = () => {
                         )}
                       </ListItemAvatar>
                       <ListItemText
+                        sx={{ minWidth: 0 }}
                         primary={
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1 }}>
-                            <Typography variant="body2" sx={{ lineHeight: 1.4 }}>
+                          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'flex-start' }, gap: 0.5, minWidth: 0 }}>
+                            <Typography variant="body2" sx={{ lineHeight: 1.4, minWidth: 0, overflowWrap: 'anywhere' }}>
                               {activity.text}
                             </Typography>
                             {activity.amount && (

@@ -35,10 +35,6 @@ export const LoginPage: FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!email || !password) {
-      setError('Vui lòng nhập đầy đủ thông tin.');
-      return;
-    }
     setLoading(true);
     try {
       await login(email, password);
