@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { FC } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
@@ -8,14 +9,22 @@ import {
   CardContent,
   Chip,
   Divider,
+  IconButton,
   List,
   ListItem,
   ListItemAvatar,
   ListItemText,
+  TextField,
   Typography,
 } from '@mui/material';
-import { ArrowBack as ArrowBackIcon, CheckCircle, Cancel } from '@mui/icons-material';
-import { formatVND, formatDate, getInitials, getAvatarColor, getAvatarTextColor } from '../../utils/format';
+import {
+  ArrowBack as ArrowBackIcon,
+  CheckCircle,
+  Cancel,
+  Add as AddIcon,
+  Remove as RemoveIcon,
+} from '@mui/icons-material';
+import { formatVND, formatDate, getInitials, getAvatarColor, getAvatarTextColor, calcPerPerson } from '../../utils/format';
 import { mockSessions } from '../../mocks/data';
 import type { SessionStatus } from '../../types';
 
@@ -39,6 +48,32 @@ export const SessionDetailPage: FC = () => {
       </Box>
     );
   }
+
+  // Editable shuttlecock qty — only used when pending
+  const [shuttlecockQty, setShuttlecockQty] = useState(session.shuttlecockQty);
+  const isPending = session.status === 'pending';
+
+  // Derived cost calculations
+  const shuttlecockCost = shuttlecockQty * session.shuttlecockPrice;
+  const totalCost = session.courtFee + shuttlecockCost;
+  const perPerson = calcPerPerson(totalCost, session.attendeeCount, 1000);
+  const remainder = session.attendeeCount > 0 ? totalCost - perPerson * session.attendeeCount : 0;
+
+  // Use computed values when pending, original values otherwise
+  const displayValues = isPending
+    ? { shuttlecockQty, shuttlecockCost, totalCost, perPerson, remainder }
+    : {
+        shuttlecockQty: session.shuttlecockQty,
+        shuttlecockCost: session.shuttlecockCost,
+        totalCost: session.totalCost,
+        perPerson: session.perPerson,
+        remainder: session.remainder,
+      };
+
+  const handleQtyChange = (value: number) => {
+    const clamped = Math.max(0, value);
+    setShuttlecockQty(clamped);
+  };
 
   const meta = statusMeta[session.status];
   const allMembers = mockSessions.find((s) => s.id === 's1')?.attendances ?? [];
@@ -67,14 +102,102 @@ export const SessionDetailPage: FC = () => {
 
           <Divider sx={{ mb: 2 }} />
 
+          {/* Shuttlecock qty editor — only when pending */}
+          {isPending && (
+            <Box
+              sx={{
+                mb: 2,
+                p: 2,
+                bgcolor: 'action.hover',
+                borderRadius: 2,
+                border: '1px dashed',
+                borderColor: 'divider',
+              }}
+            >
+              <Typography
+                variant="caption"
+                sx={{
+                  color: 'text.secondary',
+                  fontSize: '0.65rem',
+                  textTransform: 'uppercase',
+                  fontWeight: 600,
+                  letterSpacing: 0.4,
+                  mb: 1,
+                  display: 'block',
+                }}
+              >
+                Số quả cầu đã dùng
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <IconButton
+                  onClick={() => handleQtyChange(shuttlecockQty - 1)}
+                  disabled={shuttlecockQty <= 0}
+                  sx={{
+                    width: 48,
+                    height: 48,
+                    bgcolor: 'background.paper',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    '&:hover': { bgcolor: 'action.hover' },
+                  }}
+                >
+                  <RemoveIcon />
+                </IconButton>
+                <TextField
+                  type="number"
+                  value={shuttlecockQty}
+                  onChange={(e) => handleQtyChange(Number(e.target.value))}
+                  sx={{
+                    width: 80,
+                    '& .MuiOutlinedInput-root': {
+                      height: 48,
+                      fontSize: '1.25rem',
+                      fontWeight: 700,
+                      textAlign: 'center',
+                    },
+                    '& input': {
+                      textAlign: 'center',
+                      fontSize: '1.25rem',
+                      padding: '8px',
+                    },
+                  }}
+                  slotProps={{ htmlInput: { min: 0 } }}
+                />
+                <IconButton
+                  onClick={() => handleQtyChange(shuttlecockQty + 1)}
+                  sx={{
+                    width: 48,
+                    height: 48,
+                    bgcolor: 'background.paper',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    '&:hover': { bgcolor: 'action.hover' },
+                  }}
+                >
+                  <AddIcon />
+                </IconButton>
+                <Typography variant="body2" sx={{ color: 'text.secondary', ml: 0.5 }}>
+                  × {formatVND(session.shuttlecockPrice)}/quả
+                </Typography>
+              </Box>
+              {shuttlecockCost > 0 && (
+                <Typography variant="body2" sx={{ mt: 1, fontWeight: 600, color: 'primary.main' }}>
+                  Tiền cầu: {formatVND(shuttlecockCost)}
+                </Typography>
+              )}
+            </Box>
+          )}
+
           <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
             {[
               { label: 'Tiền sân', value: formatVND(session.courtFee) },
-              { label: 'Số quả cầu', value: `${session.shuttlecockQty} quả` },
-              { label: 'Tiền cầu', value: formatVND(session.shuttlecockCost) },
-              { label: 'Tổng chi phí', value: formatVND(session.totalCost), highlight: true },
+              ...(!isPending
+                ? [{ label: 'Số quả cầu', value: `${displayValues.shuttlecockQty} quả` }]
+                : []),
+              { label: 'Tiền cầu', value: formatVND(displayValues.shuttlecockCost) },
+              { label: 'Tổng chi phí', value: formatVND(displayValues.totalCost), highlight: true },
               { label: 'Số người', value: `${session.attendeeCount} người` },
-              { label: 'Mỗi người', value: formatVND(session.perPerson), highlight: true },
+              { label: 'Mỗi người', value: formatVND(displayValues.perPerson), highlight: true },
             ].map(({ label, value, highlight }) => (
               <Box key={label}>
                 <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.65rem', textTransform: 'uppercase', fontWeight: 600, letterSpacing: 0.4 }}>
@@ -87,10 +210,10 @@ export const SessionDetailPage: FC = () => {
             ))}
           </Box>
 
-          {session.remainder > 0 && (
+          {displayValues.remainder > 0 && (
             <Box sx={{ mt: 1.5 }}>
               <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                Phần dư vào quỹ nhóm: <strong>{formatVND(session.remainder)}</strong>
+                Phần dư vào quỹ nhóm: <strong>{formatVND(displayValues.remainder)}</strong>
               </Typography>
             </Box>
           )}
@@ -150,7 +273,7 @@ export const SessionDetailPage: FC = () => {
       </Card>
 
       {/* Action for pending session */}
-      {session.status === 'pending' && (
+      {isPending && (
         <Button variant="contained" fullWidth size="large" sx={{ mt: 3 }}>
           Xác nhận &amp; Trừ tiền
         </Button>
