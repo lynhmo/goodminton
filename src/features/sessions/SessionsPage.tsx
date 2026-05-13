@@ -27,7 +27,7 @@ export const SessionsPage: FC = () => {
     <Box>
       {/* Page Header */}
       <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 0.5 }}>
-        <Box>
+        <Box sx={{ minWidth: 0 }}>
           <Typography variant="h2">Lịch tập &amp; Thu chi</Typography>
           <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
             Quản lý chi tiết buổi tập, điểm danh thành viên.
@@ -69,7 +69,7 @@ export const SessionsPage: FC = () => {
             <Card key={session.id}>
               <CardActionArea onClick={() => navigate(`/sessions/${session.id}`)}>
                 <CardContent sx={{ p: 2.5 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, minWidth: 0 }}>
                     <Box
                       sx={{
                         width: 44,
@@ -86,14 +86,14 @@ export const SessionsPage: FC = () => {
                     </Box>
 
                     <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
-                        <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, minWidth: 0, mb: 0.5 }}>
+                        <Typography variant="body1" sx={{ fontWeight: 600, minWidth: 0, overflowWrap: 'anywhere' }}>
                           {formatDate(session.date)}
                         </Typography>
                         <Chip
                           label={meta.label}
                           size="small"
-                          sx={{ bgcolor: meta.bg, color: meta.color, fontWeight: 600, height: 22 }}
+                          sx={{ bgcolor: meta.bg, color: meta.color, fontWeight: 600, height: 22, flexShrink: 0 }}
                         />
                       </Box>
 

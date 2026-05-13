@@ -50,6 +50,8 @@ export const AppShell: FC<AppShellProps> = ({ children }) => {
           flexDirection: 'column',
           minWidth: 0,
           minHeight: '100vh',
+          maxWidth: '100%',
+          overflowX: 'hidden',
         }}
       >
         {/* Mobile AppBar — visible xs only */}
@@ -66,6 +68,8 @@ export const AppShell: FC<AppShellProps> = ({ children }) => {
             pb: { xs: 10, md: 3 }, // extra bottom padding for BottomNav on mobile
             maxWidth: { md: 1200 },
             width: '100%',
+            boxSizing: 'border-box',
+            overflowX: 'hidden',
             mx: { md: 'auto' },
           }}
         >
@@ -76,20 +80,58 @@ export const AppShell: FC<AppShellProps> = ({ children }) => {
         <Box sx={{ display: { xs: 'block', md: 'none' } }}>
           <Paper
             elevation={0}
-            sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1100 }}
+            sx={{
+              position: 'fixed',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              width: '100%',
+              maxWidth: '100vw',
+              overflowX: 'hidden',
+              zIndex: 1100,
+            }}
           >
             <BottomNavigation
               value={currentTab}
               onChange={(_e, newValue: number) => navigate(NAV_ITEMS[newValue].path)}
+              sx={{ height: 64, width: '100%', maxWidth: '100%', overflowX: 'hidden' }}
             >
               {NAV_ITEMS.map((item) => (
                 <BottomNavigationAction
                   key={item.path}
                   label={item.label}
                   icon={item.icon}
+                  disableRipple
+                  showLabel
                   sx={{
+                    flex: '1 1 0',
+                    minWidth: 0,
+                    maxWidth: 'none',
+                    px: 0.5,
+                    pt: 0.75,
+                    pb: 0.5,
+                    border: 0,
+                    outline: 'none',
+                    '& .MuiBottomNavigationAction-label': {
+                      maxWidth: '100%',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      opacity: 1,
+                      fontSize: '0.75rem',
+                      lineHeight: 1.2,
+                      transform: 'none',
+                    },
+                    '&:focus': {
+                      outline: 'none',
+                    },
+                    '&:focus-visible': {
+                      outline: 'none',
+                    },
                     '&.Mui-selected': {
                       color: 'primary.main',
+                      border: 0,
+                      outline: 'none',
                     },
                   }}
                 />

@@ -164,7 +164,7 @@ export const SessionCreatePage: FC = () => {
             onChange={(e) => setCourtFee(e.target.value)}
             slotProps={{ input: { endAdornment: <InputAdornment position="end">VNĐ</InputAdornment> }, htmlInput: { min: 0, step: 50000 } }}
           />
-          <Box sx={{ display: 'flex', gap: 2 }}>
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
             <TextField
               label="Số quả cầu đã dùng"
               type="number"
@@ -212,7 +212,7 @@ export const SessionCreatePage: FC = () => {
 
       {/* Section 3: Điểm danh */}
       <SectionCard title={`Điểm danh (${presentCount}/${mockGroupMembers.length})`} icon="✅">
-        <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1, mb: 2 }}>
           <TextField
             size="small"
             placeholder="Tìm thành viên..."

@@ -1,58 +1,198 @@
-# Badminton App Rules (Compressed)
+# CLAUDE.md
 
-**Project**: Badminton group management — Members, sessions, auto split court + shuttle fees, track balance.  
-**Stack**: React 18 + TS (strict) + MUI v5 + React Hook Form + Zod + TanStack Query.
+Đây là file hướng dẫn cho AI models khi làm việc với dự án Badminton App. File này được tự động đọc bởi Claude Code, Gemini CLI, GitHub Copilot, và các AI coding assistants khác.
 
-## Must Follow
+## Project Overview
 
-**Code**:
-- TS strict — no `any`
-- MUI components only (Box, Typography, Button...)
-- Styling via `sx` prop, theme colors only (no hex hardcode)
-- Functional components + named exports
-- Vietnamese UI text
-- Feature folder per feature (/auth, /members, /sessions, etc.)
+**The Court & Canvas — Precision Motion** — Ứng dụng quản lý **nhóm chơi cầu lông** tại Việt Nam. Chức năng cốt lõi: quản lý thành viên, ghi nhận buổi tập, **chia tiền sân + cầu tự động**, và theo dõi tài chính nhóm. Xây dựng với React + TypeScript + MUI (Material UI).
 
-**MOBILE-FIRST (mandatory)**:
-- Write mobile first, expand with `sm`/`md` breakpoints
-- Touch targets ≥ 48px (all buttons/links)
-- BottomNavigation, NOT sidebar
-- No horizontal scroll, respect viewport
-- Primary actions bottom 1/3 (thumb-zone)
-- No hover-only interactions (touch alternative required)
-- SwipeableDrawer on mobile
-- MUI Skeleton for loading, NOT spinners
-- Pull-to-refresh on lists
-- FAB for main action per page
+> **⚠️ MOBILE-FIRST**: App này chủ yếu dùng trên **điện thoại** tại sân cầu lông. Trưởng nhóm điểm danh, nhập chi phí, chia tiền ngay tại sân. Mọi thiết kế phải ưu tiên mobile trước, desktop là phụ.
 
-## Don't
-- Hardcode colors/spacing → use theme
-- Raw HTML → use MUI
-- CSS files → use `sx`
-- `any` type → proper interfaces
-- Sidebar on mobile → BottomNavigation
-- Desktop-first breakpoints → mobile-first
+> **📝 PRD chi tiết**: `@docs/PRD.md`  
+> **🎨 Design language**: `@rules/design-language.md`  
+> **🖼️ Mockup UI**: `@mockup_ui/` — Ảnh thiết kế desktop + mobile
 
-## State & Forms
-- Local: `useState`
-- Complex local: `useReducer`
-- Shared: Context + useReducer
-- Server: TanStack Query
-- Forms: React Hook Form + Zod
-- Global: Context (theme, auth, notifications)
+## Tech Stack
 
-## Domain: Badminton Group
-**Rule**: 1 member = 1 account.
+| Layer | Technology |
+|-------|-----------|
+| **Language** | TypeScript (strict mode) |
+| **UI Framework** | React 18+ |
+| **UI Library** | MUI (Material UI) v5+ — Material Design |
+| **State Management** | React Context + useReducer (global), useState (local) |
+| **Server State** | TanStack Query (React Query) hoặc SWR |
+| **Forms** | React Hook Form + Zod validation |
+| **Routing** | React Router v6+ |
+| **Build Tool** | Vite |
+| **Package Manager** | pnpm (ưu tiên) hoặc npm |
 
-**Entities**: Member, Group, GroupMember, Session, Attendance, Transaction.
+## Architecture
 
-**Money split**:
 ```
-Total = court_fee + (shuttle_qty × shuttle_price)
-Per person = ROUND_DOWN(Total / attendees)
-Remainder → group fund
+src/
+├── components/          # Shared UI components
+│   ├── common/          # Button, Input, Card, Modal, Avatar
+│   ├── layout/          # BottomNav, AppBar, PageContainer, Sidebar
+│   └── feedback/        # Snackbar, Alert, Loading, ErrorBoundary
+├── features/            # Feature modules (domain-driven)
+│   ├── auth/            # Đăng nhập, đăng ký, quên MK, OAuth — mỗi member = 1 account
+│   ├── dashboard/       # Tổng quan — stats, thông báo
+│   ├── members/         # Thành viên — CRUD, balance, transactions
+│   ├── sessions/        # Lịch tập & Thu chi ⭐ CORE — nhập buổi tập, chia tiền
+│   ├── rankings/        # Bảng xếp hạng — Top 10
+│   └── settings/        # Cài đặt — cấu hình nhóm
+├── hooks/               # Custom hooks dùng chung
+├── services/            # API layer + auth interceptor
+├── guards/              # Route guards (AuthGuard, AdminGuard)
+├── types/               # Shared TypeScript types
+├── utils/               # Utility functions (formatVND, formatPhone...)
+├── theme/               # MUI theme config & design tokens
+└── App.tsx
 ```
 
-**Formats**: `xxx.xxx VNĐ` | `0xxx xxx xxx` | `Thứ X, DD/MM/YYYY`
+## Coding Conventions
 
-**Mobile context**: On court = attendance + cost input + split. After = check balance. Home = member CRUD + stats.
+### PHẢI tuân theo:
+
+1. **TypeScript strict** — Không dùng `any`. Dùng `unknown` + type guards khi cần
+2. **MUI components** — Dùng MUI components (Box, Typography, Button...) thay vì HTML raw
+3. **MUI sx prop** — Styling qua `sx={{ }}`, không inline CSS hay className
+4. **MUI theme colors** — Dùng `color="primary"` hoặc `sx={{ color: 'text.secondary' }}`, KHÔNG hardcode hex
+5. **MUI spacing** — Dùng spacing units (`p: 2` = 16px), KHÔNG hardcode pixels
+6. **MUI Typography** — Dùng Typography component với proper variants (h1-h6, body1, body2)
+7. **Functional components** — Dùng FC + arrow functions, không class components
+8. **Named exports** — `export const MyComponent`, không default exports
+9. **Tiếng Việt** — UI text, labels, messages bằng tiếng Việt
+10. **Feature-based structure** — Mỗi feature có folder riêng với components/, hooks/, services/, types/
+11. **Build** — Không cần chạy build `npm run build` sau mỗi lần chỉnh sửa code. Chỉ chạy build khi mà người dùng yêu cầu
+
+### MOBILE-FIRST Rules (BẮT BUỘC):
+
+11. **Mobile-first responsive** — Viết styles cho mobile trước, dùng `sm`/`md` breakpoints mở rộng lên
+12. **Touch targets ≥ 48px** — Tất cả buttons, links, interactive elements phải ≥ 48x48px
+13. **BottomNavigation** — Navigation chính dùng MUI BottomNavigation, KHÔNG sidebar trên mobile
+14. **Viewport-safe** — Không horizontal scroll, content fit 100vw, respect safe-area-inset
+15. **Thumb-zone friendly** — Primary actions đặt ở vùng ngón cái chạm được (bottom 1/3 màn hình)
+16. **No hover-only interactions** — Mọi hover effect phải có touch equivalent
+17. **SwipeableDrawer** — Dùng SwipeableDrawer thay Drawer trên mobile cho gesture support
+18. **Skeleton loading** — Dùng MUI Skeleton cho loading states thay vì spinner toàn trang
+19. **Pull-to-refresh** — Lists phải support pull-to-refresh pattern
+20. **FAB cho primary action** — Dùng FloatingActionButton cho action chính mỗi page (đặt sân, ghi điểm...)
+21. **No iOS input zoom** — Text input/select/textarea phải có font-size ≥ 16px (`1rem`) để Safari iPhone không tự zoom khi focus
+
+### KHÔNG làm:
+
+- ❌ Hardcode colors: `sx={{ color: '#ff0000' }}` → ✅ `sx={{ color: 'error.main' }}`
+- ❌ Hardcode spacing: `style={{ padding: '16px' }}` → ✅ `sx={{ p: 2 }}`
+- ❌ Raw HTML: `<button>` → ✅ `<Button variant="contained">`
+- ❌ Border/outline active/focus mặc định của HTML/browser → ✅ Custom focus style theo MUI theme, hoặc `outline: 'none'` khi đã có trạng thái focus rõ ràng
+- ❌ Input text font-size < 16px trên mobile → ✅ `fontSize: '1rem'` hoặc lớn hơn để tránh iOS Safari auto-zoom khi focus
+- ❌ CSS files cho components → ✅ MUI `sx` prop hoặc `styled()`
+- ❌ `any` type → ✅ proper interfaces/types
+- ❌ `console.log` trong production code
+- ❌ Index files re-export everything → ✅ explicit imports
+- ❌ Sidebar navigation trên mobile → ✅ BottomNavigation
+- ❌ Hover-only interactions → ✅ Touch + long-press alternatives
+- ❌ Small touch targets < 48px → ✅ minHeight/minWidth: 48px
+- ❌ Fixed position elements che keyboard → ✅ Respect virtual keyboard
+- ❌ Desktop-first `md={{ }}` rồi override `xs={{ }}` → ✅ Mobile-first `xs={{ }}` rồi mở rộng `md={{ }}`
+
+## Component Patterns
+
+```typescript
+// ✅ Chuẩn component pattern
+import { FC, memo } from 'react';
+import { Box, Typography } from '@mui/material';
+
+interface MyComponentProps {
+  title: string;
+  onAction?: () => void;
+}
+
+export const MyComponent: FC<MyComponentProps> = memo(({ title, onAction }) => {
+  return (
+    <Box sx={{ p: 2, borderRadius: 2, border: 1, borderColor: 'divider' }}>
+      <Typography variant="h6">{title}</Typography>
+    </Box>
+  );
+});
+
+MyComponent.displayName = 'MyComponent';
+```
+
+## State Management Rules
+
+- **Local UI state** → `useState`
+- **Complex local state** → `useReducer`
+- **Feature-level shared state** → React Context + useReducer
+- **Server/API state** → TanStack Query (useQuery, useMutation)
+- **Form state** → React Hook Form + Zod schema
+- **Global app state** (theme, auth, notifications) → Context at App level
+
+## Form Pattern
+
+```typescript
+// Luôn dùng Zod schema + React Hook Form
+const schema = z.object({
+  name: z.string().min(1, 'Nhập tên'),
+  type: z.enum(['indoor', 'outdoor']),
+});
+
+type FormData = z.infer<typeof schema>;
+// → useForm<FormData>({ resolver: zodResolver(schema) })
+```
+
+## Agents & Review Process
+
+Dự án có 4 chuyên gia AI agents:
+
+| Agent | Khi nào dùng |
+|-------|-------------|
+| 🎯 `@agents/project-manager` | Planning, phân công, tổng hợp review, quyết định |
+| 🎨 `@agents/ui-reviewer` | Review visual design, MUI compliance, responsive |
+| 👤 `@agents/ux-reviewer` | Review user flow, usability, accessibility |
+| 💼 `@agents/business-reviewer` | Review business logic, revenue model, market fit |
+| 🔥 `@agents/debugger` | Debug systematic — tìm root cause, không đoán mò, 4-phase process |
+
+### Review workflow:
+```
+Code xong → @project-manager điều phối → 3 reviewers đánh giá → PM tổng hợp → Approve/Block
+```
+
+## Skills Reference
+
+Đọc thêm chi tiết tại:
+- `@skills/react-typescript-patterns/SKILL.md` — React + TS patterns
+- `@skills/mui-design-system/SKILL.md` — MUI theming & Material Design
+- `@skills/design-system/SKILL.md` — Design system audit
+
+## Domain: Badminton Group Management
+
+> **Nguyên tắc: Mỗi thành viên = 1 tài khoản**. Đăng ký → tạo account → join nhóm.
+
+### Key entities:
+- **Member (= Account)**: email, passwordHash, displayName, phone, provider (local/google/facebook)
+- **Group (Nhóm chơi)**: name, inviteCode, defaultCourtFee, roundingRule
+- **GroupMember (Quan hệ)**: groupId, memberId, role (admin/member), type (fixed/guest), balance
+- **Session (Buổi tập)**: groupId, createdBy, date, courtFee, shuttlecockQty, shuttlecockPrice, totalCost, perPerson, status
+- **Attendance (Điểm danh)**: sessionId, memberId, isPresent, amountCharged
+- **Transaction (Giao dịch)**: groupMemberId, type (session_charge/deposit/refund), amount, balanceAfter
+
+### Core Flow (Logic chia tiền):
+```
+Tiền cầu    = shuttlecockQty × shuttlecockPrice
+Tổng        = courtFee + Tiền cầu
+Mỗi người   = ROUND_DOWN(Tổng / số_người_có_mặt)
+Phần dư     = Tổng - (Mỗi_người × số_người) → vào quỹ nhóm
+```
+
+### Format rules:
+- Tiền: `xxx.xxx VNĐ` (dấu chấm ngăn cách hàng nghìn)
+- SĐT: `0xxx xxx xxx`
+- Ngày: `Thứ X, DD/MM/YYYY`
+
+### Mobile Usage Context:
+- **Tại sân**: Điểm danh, nhập chi phí, chia tiền → cần big buttons, one-hand operation
+- **Sau buổi tập**: Xem tiền cần đóng, liên hệ qua Zalo
+- **Ở nhà**: Quản lý thành viên, xem thống kê, cài đặt
+- **Connectivity**: 4G/WiFi sân có thể yếu → offline-capable cho session draft

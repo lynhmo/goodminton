@@ -81,6 +81,13 @@ const theme = createTheme({
         fullWidth: true,
       },
     },
+    MuiInputBase: {
+      styleOverrides: {
+        input: {
+          fontSize: '1rem',
+        },
+      },
+    },
     MuiOutlinedInput: {
       styleOverrides: {
         root: {
@@ -106,7 +113,7 @@ const theme = createTheme({
     MuiBottomNavigationAction: {
       styleOverrides: {
         root: {
-          minWidth: 48,
+          minWidth: 0,
           paddingTop: 8,
         },
       },
