@@ -25,7 +25,7 @@ export const LoginPage: FC = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
 
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -37,7 +37,7 @@ export const LoginPage: FC = () => {
     setError('');
     setLoading(true);
     try {
-      await login(email, password);
+      await login(identifier, password);
       navigate('/dashboard');
     } catch {
       setError('Đăng nhập thất bại. Vui lòng thử lại.');
@@ -103,12 +103,12 @@ export const LoginPage: FC = () => {
         {/* Fields */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <TextField
-            label="Tên đăng nhập"
-            placeholder="username@example.com"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            autoComplete="email"
+            label="Username / email"
+            placeholder="username hoặc email@example.com"
+            type="text"
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
+            autoComplete="username"
             slotProps={{
               input: {
                 startAdornment: (

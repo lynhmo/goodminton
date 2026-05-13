@@ -11,7 +11,8 @@ export type TransactionType = 'session_charge' | 'deposit' | 'refund' | 'adjustm
 export interface Member {
   id: string;
   displayName: string;
-  email: string;
+  username: string;
+  email?: string;
   phone: string;
   avatarUrl?: string;
   provider: 'local' | 'google' | 'facebook';
@@ -101,7 +102,10 @@ export interface Group {
 export interface AuthUser {
   id: string;
   displayName: string;
-  email: string;
+  username: string;
+  email?: string;
+  phone?: string;
+  phoneVerified: boolean;
   role: MemberRole;
   avatarUrl?: string;
 }

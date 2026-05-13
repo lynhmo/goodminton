@@ -233,6 +233,7 @@ export const MembersPage: FC = () => {
         member: {
           id: `m-${Date.now()}`,
           displayName: data.displayName,
+          username: `user_${Date.now()}`,
           phone: data.phone,
           email: '',
           provider: 'local',

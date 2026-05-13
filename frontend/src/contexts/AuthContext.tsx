@@ -6,7 +6,8 @@ import { mockAuthUser } from '../mocks/data';
 interface AuthContextValue {
   user: AuthUser | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (identifier: string, password: string) => Promise<void>;
+  verifyPhone: (phone: string, otp: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -15,9 +16,20 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
 
-  const login = async (_email: string, _password: string) => {
+  const login = async (identifier: string, _password: string) => {
     // Fake auth — accept any credentials
-    setUser({ ...mockAuthUser, email: _email });
+    const normalized = identifier.trim();
+    const isEmail = normalized.includes('@');
+    setUser({
+      ...mockAuthUser,
+      email: isEmail ? normalized : mockAuthUser.email,
+      phoneVerified: true,
+    });
+  };
+
+  const verifyPhone = async (phone: string, otp: string) => {
+    if (otp !== '123456') throw new Error('Invalid OTP');
+    setUser((current) => current ? { ...current, phone: phone.replace(/\s/g, ''), phoneVerified: true } : current);
   };
 
   const logout = () => {
@@ -25,7 +37,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: user !== null, login, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: user !== null, login, verifyPhone, logout }}>
       {children}
     </AuthContext.Provider>
   );

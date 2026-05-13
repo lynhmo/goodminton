@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { createClient } from '@supabase/supabase-js';
+import bcrypt from 'bcryptjs';
 import 'dotenv/config';
 
 const prisma = new PrismaClient();
@@ -21,8 +21,6 @@ function required(name: string, value: string | undefined): string {
 }
 
 async function main() {
-  const supabaseUrl = required('SUPABASE_URL', process.env.SUPABASE_URL);
-  const supabaseSecretKey = required('SUPABASE_SECRET_KEY', process.env.SUPABASE_SECRET_KEY);
   const role = (arg('role') ?? 'admin') as InitRole;
   const force = hasFlag('force');
 
@@ -41,31 +39,13 @@ async function main() {
 
   const email = required('ADMIN_EMAIL or --email', arg('email') ?? process.env.ADMIN_EMAIL);
   const password = required('ADMIN_PASSWORD or --password', arg('password') ?? process.env.ADMIN_PASSWORD);
+  const username = (arg('username') ?? process.env.ADMIN_USERNAME ?? email.split('@')[0]).toLowerCase();
   const displayName = arg('name') ?? process.env.ADMIN_NAME ?? (role === 'super_admin' ? 'Super Admin' : 'Admin');
   const phone = arg('phone') ?? process.env.ADMIN_PHONE ?? '0900000000';
   const groupName = arg('group') ?? process.env.ADMIN_GROUP_NAME ?? 'Nhom cau long ABC';
   const inviteCode = arg('invite') ?? process.env.ADMIN_INVITE_CODE ?? 'ABC123';
 
-  const supabase = createClient(supabaseUrl, supabaseSecretKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-
-  const { data: existingAuthUsers, error: listError } = await supabase.auth.admin.listUsers();
-  if (listError) throw listError;
-
-  const existingUser = existingAuthUsers.users.find((user) => user.email?.toLowerCase() === email.toLowerCase());
-  const authUser = existingUser
-    ? existingUser
-    : (
-        await supabase.auth.admin.createUser({
-          email,
-          password,
-          email_confirm: true,
-          user_metadata: { display_name: displayName, phone },
-        })
-      ).data.user;
-
-  if (!authUser) throw new Error('Cannot create Supabase auth user');
+  const passwordHash = await bcrypt.hash(password, 10);
 
   await prisma.group.upsert({
     where: { invite_code: inviteCode },
@@ -83,18 +63,20 @@ async function main() {
   const group = await prisma.group.findUniqueOrThrow({ where: { invite_code: inviteCode } });
 
   await prisma.member.upsert({
-    where: { id: authUser.id },
-    update: { email, display_name: displayName, phone, status: 'active' },
-    create: { id: authUser.id, email, display_name: displayName, phone, status: 'active' },
+    where: { username },
+    update: { email, password_hash: passwordHash, display_name: displayName, phone, status: 'active' },
+    create: { username, email, password_hash: passwordHash, display_name: displayName, phone, status: 'active' },
   });
+
+  const member = await prisma.member.findUniqueOrThrow({ where: { username } });
 
   await prisma.groupMember.upsert({
-    where: { group_id_member_id: { group_id: group.id, member_id: authUser.id } },
+    where: { group_id_member_id: { group_id: group.id, member_id: member.id } },
     update: { role, type: 'fixed', status: 'active' },
-    create: { group_id: group.id, member_id: authUser.id, role, type: 'fixed', status: 'active', balance: 0 },
+    create: { group_id: group.id, member_id: member.id, role, type: 'fixed', status: 'active', balance: 0 },
   });
 
-  console.log(`${role} ready: ${email}`);
+  console.log(`${role} ready: ${username}`);
 }
 
 main()

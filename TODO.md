@@ -8,11 +8,17 @@
 
 ### 🔐 Auth
 
-- ✅ Màn hình Đăng nhập (`/login`) — form email + password, social login UI
-- ✅ Màn hình Đăng ký (`/register`) — họ tên, email, password, SĐT, mã mời
+- ✅ Màn hình Đăng nhập (`/login`) — username / email + password, social login UI
+- ✅ Màn hình Đăng ký (`/register`) — họ tên, username, email optional, password, SĐT, mã mời
 - ✅ Màn hình Quên mật khẩu (`/forgot-password`)
 - ✅ Route guard — redirect `/login` nếu chưa auth
+- ✅ SĐT chỉ nhập lúc đăng ký
+- ✅ Guard redirect `/login` nếu chưa auth
 - ⬜ JWT / session token thực (hiện dùng mock context)
+- ✅ Backend login nhận `identifier` thay vì chỉ email
+- ✅ DB `members.username` unique + `members.email` optional + `members.password_hash`
+- ⬜ OTP thật qua SMS/Zalo ZNS
+- ⬜ Link social account với SĐT đã verify
 - ⬜ Google OAuth tích hợp thực
 - ⬜ Facebook OAuth tích hợp thực
 - ⬜ "Ghi nhớ đăng nhập" — persistent token 30 ngày
@@ -57,6 +63,7 @@
 - ✅ Danh sách sessions — card list, mới nhất trước
 - ✅ Filter chips: Tất cả / Bản nháp / Chờ xử lý / Hoàn tất
 - ✅ Session card: ngày, trạng thái, tổng chi phí, số người, mỗi người
+- ✅ Session card: `Số người` hiển thị số, không kèm chữ `người`
 - ⬜ API thực thay mock data
 
 #### Tạo buổi tập (`/sessions/new`)
@@ -81,6 +88,7 @@
 #### Chi tiết buổi tập (`/sessions/:id`)
 
 - ✅ Xem chi tiết: ngày, chi phí, điểm danh, số tiền/người
+- 🚧 Inline edit số cầu khi session `pending` — UI local-only, chưa persist/backend
 - ⬜ Sửa buổi tập (`/sessions/:id/edit`)
 - ⬜ Xác nhận & Trừ tiền từ màn chi tiết
 - ⬜ Revert từ màn chi tiết

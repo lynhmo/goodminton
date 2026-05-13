@@ -65,7 +65,8 @@ goodminton/
 
 | Method | Path | Auth | Mô tả |
 |--------|------|------|-------|
-| POST | `/api/auth/login` | — | Đăng nhập → set session |
+| POST | `/api/auth/login` | — | Đăng nhập bằng username/email + password → set session |
+| POST | `/api/auth/register` | — | Đăng ký username bắt buộc, email optional, phone bắt buộc |
 | POST | `/api/auth/logout` | session | Xóa session |
 | GET | `/api/auth/me` | session | User hiện tại |
 | GET | `/api/members` | session | Danh sách thành viên trong group |

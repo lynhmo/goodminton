@@ -11,7 +11,7 @@ membersRouter.get('/', requireAuth, async (req, res) => {
     .from('group_members')
     .select(`
       id, role, type, balance, status, joined_at,
-      members (id, email, display_name, phone, avatar_url)
+      members (id, username, email, display_name, phone, avatar_url)
     `)
     .eq('group_id', req.session.groupId)
     .order('joined_at', { ascending: true });
@@ -30,7 +30,7 @@ membersRouter.get('/:id', requireAuth, async (req, res) => {
     .from('group_members')
     .select(`
       id, role, type, balance, status, joined_at,
-      members (id, email, display_name, phone, avatar_url)
+      members (id, username, email, display_name, phone, avatar_url)
     `)
     .eq('group_id', req.session.groupId)
     .eq('member_id', req.params.id)
@@ -46,24 +46,25 @@ membersRouter.get('/:id', requireAuth, async (req, res) => {
 
 // POST /api/members — Thêm member vào group (admin only)
 membersRouter.post('/', requireAdmin, async (req, res) => {
-  const { email, display_name, phone, role = 'member', type = 'fixed' } = req.body as {
-    email: string;
-    display_name: string;
-    phone: string;
+  const { identifier, role = 'member', type = 'fixed' } = req.body as {
+    identifier: string;
     role?: 'super_admin' | 'admin' | 'member';
     type?: 'fixed' | 'guest';
   };
 
-  if (!email || !display_name || !phone) {
-    res.status(400).json({ error: 'Email, tên và số điện thoại là bắt buộc' });
+  if (!identifier) {
+    res.status(400).json({ error: 'Username hoặc email là bắt buộc' });
     return;
   }
 
-  // Tìm member theo email
+  const normalized = identifier.trim().toLowerCase();
+  const isEmail = normalized.includes('@');
+
+  // Tìm member theo username/email
   const { data: existing } = await supabase
     .from('members')
     .select('id')
-    .eq('email', email)
+    .eq(isEmail ? 'email' : 'username', normalized)
     .single();
 
   if (!existing) {

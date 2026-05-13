@@ -1,18 +1,19 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 const groupId = '11111111-1111-4111-8111-111111111111';
 
 const members = [
-  { id: '11111111-1111-4111-8111-000000000001', gmId: '22222222-2222-4222-8222-000000000001', role: 'admin', type: 'fixed', balance: 500000, display_name: 'Nguyen Van Hung', email: 'hung@example.com', phone: '0908123456', created_at: new Date('2024-01-10T08:00:00Z') },
-  { id: '11111111-1111-4111-8111-000000000002', gmId: '22222222-2222-4222-8222-000000000002', role: 'member', type: 'fixed', balance: 150000, display_name: 'Tran Tuan Anh', email: 'anh@example.com', phone: '0912345678', created_at: new Date('2024-01-12T08:00:00Z') },
-  { id: '11111111-1111-4111-8111-000000000003', gmId: '22222222-2222-4222-8222-000000000003', role: 'member', type: 'fixed', balance: 1200000, display_name: 'Le Thi Mai', email: 'mai@example.com', phone: '0933111222', created_at: new Date('2024-01-15T08:00:00Z') },
-  { id: '11111111-1111-4111-8111-000000000004', gmId: '22222222-2222-4222-8222-000000000004', role: 'member', type: 'guest', balance: -250000, display_name: 'Pham Minh Khoa', email: 'khoa@example.com', phone: '0977888999', created_at: new Date('2024-02-05T08:00:00Z') },
-  { id: '11111111-1111-4111-8111-000000000005', gmId: '22222222-2222-4222-8222-000000000005', role: 'member', type: 'fixed', balance: 75000, display_name: 'Hoang Thi Bich', email: 'bich@example.com', phone: '0944222333', created_at: new Date('2024-02-10T08:00:00Z') },
-  { id: '11111111-1111-4111-8111-000000000006', gmId: '22222222-2222-4222-8222-000000000006', role: 'member', type: 'guest', balance: 0, display_name: 'Vu Duc Thanh', email: 'thanh@example.com', phone: '0966555444', created_at: new Date('2024-03-01T08:00:00Z') },
-  { id: '11111111-1111-4111-8111-000000000007', gmId: '22222222-2222-4222-8222-000000000007', role: 'member', type: 'fixed', balance: 320000, display_name: 'Nguyen Thi Lan', email: 'lan@example.com', phone: '0955666777', created_at: new Date('2024-03-20T08:00:00Z') },
-  { id: '11111111-1111-4111-8111-000000000008', gmId: '22222222-2222-4222-8222-000000000008', role: 'member', type: 'fixed', balance: -80000, display_name: 'Dang Van Long', email: 'long@example.com', phone: '0922444555', created_at: new Date('2024-04-01T08:00:00Z') },
+  { id: '11111111-1111-4111-8111-000000000001', gmId: '22222222-2222-4222-8222-000000000001', role: 'admin', type: 'fixed', balance: 500000, display_name: 'Nguyen Van Hung', username: 'hung', email: 'hung@example.com', phone: '0908123456', created_at: new Date('2024-01-10T08:00:00Z') },
+  { id: '11111111-1111-4111-8111-000000000002', gmId: '22222222-2222-4222-8222-000000000002', role: 'member', type: 'fixed', balance: 150000, display_name: 'Tran Tuan Anh', username: 'anh', email: 'anh@example.com', phone: '0912345678', created_at: new Date('2024-01-12T08:00:00Z') },
+  { id: '11111111-1111-4111-8111-000000000003', gmId: '22222222-2222-4222-8222-000000000003', role: 'member', type: 'fixed', balance: 1200000, display_name: 'Le Thi Mai', username: 'mai', email: 'mai@example.com', phone: '0933111222', created_at: new Date('2024-01-15T08:00:00Z') },
+  { id: '11111111-1111-4111-8111-000000000004', gmId: '22222222-2222-4222-8222-000000000004', role: 'member', type: 'guest', balance: -250000, display_name: 'Pham Minh Khoa', username: 'khoa', email: 'khoa@example.com', phone: '0977888999', created_at: new Date('2024-02-05T08:00:00Z') },
+  { id: '11111111-1111-4111-8111-000000000005', gmId: '22222222-2222-4222-8222-000000000005', role: 'member', type: 'fixed', balance: 75000, display_name: 'Hoang Thi Bich', username: 'bich', email: 'bich@example.com', phone: '0944222333', created_at: new Date('2024-02-10T08:00:00Z') },
+  { id: '11111111-1111-4111-8111-000000000006', gmId: '22222222-2222-4222-8222-000000000006', role: 'member', type: 'guest', balance: 0, display_name: 'Vu Duc Thanh', username: 'thanh', email: 'thanh@example.com', phone: '0966555444', created_at: new Date('2024-03-01T08:00:00Z') },
+  { id: '11111111-1111-4111-8111-000000000007', gmId: '22222222-2222-4222-8222-000000000007', role: 'member', type: 'fixed', balance: 320000, display_name: 'Nguyen Thi Lan', username: 'lan', email: 'lan@example.com', phone: '0955666777', created_at: new Date('2024-03-20T08:00:00Z') },
+  { id: '11111111-1111-4111-8111-000000000008', gmId: '22222222-2222-4222-8222-000000000008', role: 'member', type: 'fixed', balance: -80000, display_name: 'Dang Van Long', username: 'long', email: 'long@example.com', phone: '0922444555', created_at: new Date('2024-04-01T08:00:00Z') },
 ] as const;
 
 const sessions = [
@@ -23,6 +24,7 @@ const sessions = [
 ] as const;
 
 async function main() {
+  const passwordHash = await bcrypt.hash('password123', 10);
   await prisma.group.upsert({
     where: { id: groupId },
     update: {
@@ -49,6 +51,8 @@ async function main() {
       where: { id: member.id },
       update: {
         email: member.email,
+        username: member.username,
+        password_hash: passwordHash,
         display_name: member.display_name,
         phone: member.phone,
         status: 'active',
@@ -56,6 +60,8 @@ async function main() {
       create: {
         id: member.id,
         email: member.email,
+        username: member.username,
+        password_hash: passwordHash,
         display_name: member.display_name,
         phone: member.phone,
         status: 'active',

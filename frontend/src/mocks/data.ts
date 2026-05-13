@@ -14,6 +14,7 @@ export const mockGroupMembers: GroupMember[] = [
     member: {
       id: 'm1',
       displayName: 'Nguyễn Văn Hùng',
+      username: 'hung',
       email: 'hung@example.com',
       phone: '0908123456',
       provider: 'local',
@@ -32,6 +33,7 @@ export const mockGroupMembers: GroupMember[] = [
     member: {
       id: 'm2',
       displayName: 'Trần Tuấn Anh',
+      username: 'anh',
       email: 'anh@example.com',
       phone: '0912345678',
       provider: 'local',
@@ -50,6 +52,7 @@ export const mockGroupMembers: GroupMember[] = [
     member: {
       id: 'm3',
       displayName: 'Lê Thị Mai',
+      username: 'mai',
       email: 'mai@example.com',
       phone: '0933111222',
       provider: 'google',
@@ -68,6 +71,7 @@ export const mockGroupMembers: GroupMember[] = [
     member: {
       id: 'm4',
       displayName: 'Phạm Minh Khoa',
+      username: 'khoa',
       email: 'khoa@example.com',
       phone: '0977888999',
       provider: 'local',
@@ -86,6 +90,7 @@ export const mockGroupMembers: GroupMember[] = [
     member: {
       id: 'm5',
       displayName: 'Hoàng Thị Bích',
+      username: 'bich',
       email: 'bich@example.com',
       phone: '0944222333',
       provider: 'facebook',
@@ -104,6 +109,7 @@ export const mockGroupMembers: GroupMember[] = [
     member: {
       id: 'm6',
       displayName: 'Vũ Đức Thành',
+      username: 'thanh',
       email: 'thanh@example.com',
       phone: '0966555444',
       provider: 'local',
@@ -122,6 +128,7 @@ export const mockGroupMembers: GroupMember[] = [
     member: {
       id: 'm7',
       displayName: 'Nguyễn Thị Lan',
+      username: 'lan',
       email: 'lan@example.com',
       phone: '0955666777',
       provider: 'local',
@@ -140,6 +147,7 @@ export const mockGroupMembers: GroupMember[] = [
     member: {
       id: 'm8',
       displayName: 'Đặng Văn Long',
+      username: 'long',
       email: 'long@example.com',
       phone: '0922444555',
       provider: 'local',
@@ -291,7 +299,10 @@ export const mockTransactions: Transaction[] = [
 export const mockAuthUser = {
   id: 'm1',
   displayName: 'Admin',
+  username: 'admin',
   email: 'admin@example.com',
+  phone: '0908123456',
+  phoneVerified: true,
   role: 'admin' as const,
 };
 

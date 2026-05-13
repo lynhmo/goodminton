@@ -18,6 +18,7 @@ export const RegisterPage: FC = () => {
 
   const [form, setForm] = useState({
     displayName: '',
+    username: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -36,8 +37,16 @@ export const RegisterPage: FC = () => {
     e.preventDefault();
     setError('');
 
-    if (!form.displayName || !form.email || !form.password || !form.phone) {
+    if (!form.displayName || !form.username || !form.password || !form.phone) {
       setError('Vui lòng điền đầy đủ các trường bắt buộc.');
+      return;
+    }
+    if (!/^[a-zA-Z0-9_]{3,30}$/.test(form.username)) {
+      setError('Username chỉ gồm chữ, số, _, dài 3-30 ký tự.');
+      return;
+    }
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      setError('Email không hợp lệ.');
       return;
     }
     if (form.password.length < 8) {
@@ -126,7 +135,14 @@ export const RegisterPage: FC = () => {
             autoComplete="name"
           />
           <TextField
-            label="Email *"
+            label="Username *"
+            placeholder="nguyenvanan"
+            value={form.username}
+            onChange={handleChange('username')}
+            autoComplete="username"
+          />
+          <TextField
+            label="Email"
             type="email"
             placeholder="email@example.com"
             value={form.email}
