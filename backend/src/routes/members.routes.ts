@@ -50,7 +50,7 @@ membersRouter.post('/', requireAdmin, async (req, res) => {
     email: string;
     display_name: string;
     phone: string;
-    role?: 'admin' | 'member';
+    role?: 'super_admin' | 'admin' | 'member';
     type?: 'fixed' | 'guest';
   };
 

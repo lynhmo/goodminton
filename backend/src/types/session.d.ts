@@ -4,7 +4,7 @@ import 'express-session';
 declare module 'express-session' {
   interface SessionData {
     userId: string;
-    role: 'admin' | 'member';
+    role: 'super_admin' | 'admin' | 'member';
     groupId: string;
     email: string;
   }

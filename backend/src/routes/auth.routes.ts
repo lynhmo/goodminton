@@ -33,7 +33,7 @@ authRouter.post('/login', async (req, res) => {
 
   req.session.userId = data.user.id;
   req.session.email = data.user.email ?? email;
-  req.session.role = (gm?.role as 'admin' | 'member') ?? 'member';
+  req.session.role = (gm?.role as 'super_admin' | 'admin' | 'member') ?? 'member';
   req.session.groupId = gm?.group_id ?? '';
 
   res.json({

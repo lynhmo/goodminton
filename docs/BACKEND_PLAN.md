@@ -131,6 +131,8 @@ npm run dev              # tsx watch src/index.ts
 npm run db:generate      # prisma generate
 npm run db:push          # push schema lên Supabase (lần đầu)
 npm run db:studio        # Prisma Studio UI
+cd backend && npm run init:admin -- --email=admin@example.com --password=strong-password
+cd backend && npm run init:super-admin -- --email=root@example.com --password=strong-password
 
 # Frontend riêng
 cd frontend
@@ -159,6 +161,12 @@ cd backend && npm run db:push
 
 # 5. Generate Prisma client
 npm run db:generate
+
+# 5. Tạo admin đầu tiên nếu DB chưa có admin/super_admin
+cd backend && npm run init:admin -- --email=admin@example.com --password=strong-password
+
+# Hoặc tạo super admin đầu tiên nếu DB chưa có super_admin
+npm run init:super-admin -- --email=root@example.com --password=strong-password
 
 # 6. Chạy dev
 cd .. && npm run dev

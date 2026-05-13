@@ -14,7 +14,7 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction): v
     res.status(401).json({ error: 'Chưa đăng nhập' });
     return;
   }
-  if (req.session?.role !== 'admin') {
+  if (req.session?.role !== 'admin' && req.session?.role !== 'super_admin') {
     res.status(403).json({ error: 'Không có quyền admin' });
     return;
   }
