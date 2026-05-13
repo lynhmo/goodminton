@@ -1,3 +1,5 @@
+ALTER TABLE "members" ALTER COLUMN "id" SET DEFAULT gen_random_uuid();
+
 ALTER TABLE "members" ADD COLUMN IF NOT EXISTS "username" TEXT;
 ALTER TABLE "members" ADD COLUMN IF NOT EXISTS "password_hash" TEXT;
 
