@@ -22,3 +22,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Backend env
+backend/.env
+
+# Frontend build
+frontend/dist
+
+# Prisma
+backend/node_modules/.prisma

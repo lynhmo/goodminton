@@ -1,0 +1,117 @@
+// This is your Prisma schema file
+// Learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Member {
+  id           String   @id @db.Uuid
+  email        String   @unique
+  display_name String
+  phone        String   @unique
+  avatar_url   String?
+  status       String   @default("active")
+  created_at   DateTime @default(now()) @db.Timestamptz
+  updated_at   DateTime @updatedAt @db.Timestamptz
+
+  group_members GroupMember[]
+  sessions      Session[]     @relation("CreatedBy")
+  attendance    Attendance[]
+
+  @@map("members")
+}
+
+model Group {
+  id                        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                      String
+  invite_code               String   @unique
+  default_court_fee         Int      @default(0)
+  default_shuttlecock_price Int      @default(0)
+  rounding_rule             String   @default("hundred")
+  schedule                  Json?
+  created_at                DateTime @default(now()) @db.Timestamptz
+
+  group_members GroupMember[]
+  sessions      Session[]
+
+  @@map("groups")
+}
+
+model GroupMember {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  group_id  String   @db.Uuid
+  member_id String   @db.Uuid
+  role      String   @default("member")
+  type      String   @default("fixed")
+  balance   Int      @default(0)
+  status    String   @default("active")
+  joined_at DateTime @default(now()) @db.Timestamptz
+
+  group        Group         @relation(fields: [group_id], references: [id], onDelete: Cascade)
+  member       Member        @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@unique([group_id, member_id])
+  @@map("group_members")
+}
+
+model Session {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  group_id          String   @db.Uuid
+  created_by        String   @db.Uuid
+  date              DateTime @db.Date
+  court_fee         Int
+  shuttlecock_qty   Int      @default(0)
+  shuttlecock_price Int      @default(0)
+  attendee_count    Int      @default(0)
+  per_person        Int      @default(0)
+  remainder         Int      @default(0)
+  status            String   @default("draft")
+  note              String?
+  created_at        DateTime @default(now()) @db.Timestamptz
+
+  group        Group         @relation(fields: [group_id], references: [id], onDelete: Cascade)
+  creator      Member        @relation("CreatedBy", fields: [created_by], references: [id])
+  attendance   Attendance[]
+  transactions Transaction[]
+
+  @@map("sessions")
+}
+
+model Attendance {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  session_id     String   @db.Uuid
+  member_id      String   @db.Uuid
+  is_present     Boolean  @default(false)
+  amount_charged Int      @default(0)
+  created_at     DateTime @default(now()) @db.Timestamptz
+
+  session Session @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  member  Member  @relation(fields: [member_id], references: [id])
+
+  @@unique([session_id, member_id])
+  @@map("attendance")
+}
+
+model Transaction {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  group_member_id String   @db.Uuid
+  session_id      String?  @db.Uuid
+  type            String
+  amount          Int
+  balance_after   Int
+  note            String?
+  created_at      DateTime @default(now()) @db.Timestamptz
+
+  group_member GroupMember @relation(fields: [group_member_id], references: [id], onDelete: Cascade)
+  session      Session?    @relation(fields: [session_id], references: [id])
+
+  @@map("transactions")
+}

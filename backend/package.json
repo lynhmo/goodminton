@@ -1,0 +1,36 @@
+{
+  "name": "goodminton-backend",
+  "version": "0.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.8",
+    "bcryptjs": "^3.0.2",
+    "connect-pg-simple": "^10.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "@prisma/client": "^6.9.0"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/connect-pg-simple": "^7.0.3",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.3",
+    "@types/express-session": "^1.18.1",
+    "@types/node": "^24.0.0",
+    "prisma": "^6.9.0",
+    "tsx": "^4.19.4",
+    "typescript": "~5.9.3"
+  }
+}
