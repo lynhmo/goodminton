@@ -1,16 +1,16 @@
 // src/lib/supabase.ts
-// Supabase client dùng service_role key — bypass RLS, chỉ dùng server-side
+// Supabase client dùng secret key — chỉ dùng server-side
 import { createClient } from '@supabase/supabase-js';
 import 'dotenv/config';
 
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY;
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env');
+if (!supabaseUrl || !supabaseSecretKey) {
+  throw new Error('Missing SUPABASE_URL or SUPABASE_SECRET_KEY in .env');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+export const supabase = createClient(supabaseUrl, supabaseSecretKey, {
   auth: {
     autoRefreshToken: false,
     persistSession: false,

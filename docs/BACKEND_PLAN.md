@@ -1,6 +1,6 @@
 # Backend Plan — Express.js + Supabase + Prisma
 
-> **Stack**: Express.js (Node.js) + Supabase JS SDK (service_role, server-side) + Prisma ORM + express-session
+> **Stack**: Express.js (Node.js) + Supabase JS SDK (secret key, server-side) + Prisma ORM + express-session
 
 ---
 
@@ -14,7 +14,7 @@ React (Vite) — frontend/
 Express.js — backend/
     │
     ├── express-session   (auth, không dùng JWT)
-    ├── @supabase/supabase-js  (service_role key — bypass RLS)
+    ├── @supabase/supabase-js  (secret key — server-side only)
     └── @prisma/client    (type-safe DB queries)
     │
     ▼
@@ -37,7 +37,7 @@ goodminton/
 │   ├── src/
 │   │   ├── index.ts                 # Express entry + session + cors
 │   │   ├── lib/
-│   │   │   └── supabase.ts          # Supabase client (service_role)
+│   │   │   └── supabase.ts          # Supabase client (secret key)
 │   │   ├── middlewares/
 │   │   │   └── auth.middleware.ts   # requireAuth / requireAdmin
 │   │   ├── routes/
@@ -95,7 +95,8 @@ goodminton/
 
 # Supabase
 SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=eyJ...
+SUPABASE_PUBLISHABLE_KEY=sb_publishable_xxx
+SUPABASE_SECRET_KEY=sb_secret_xxx
 
 # Prisma — Supabase connection string
 DATABASE_URL=postgresql://postgres:[password]@db.[project-id].supabase.co:5432/postgres?pgbouncer=true
@@ -151,7 +152,7 @@ npm install
 
 # 3. Tạo backend/.env từ template
 cp backend/.env.example backend/.env
-# Điền SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, DATABASE_URL...
+# Điền SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_SECRET_KEY, DATABASE_URL...
 
 # 4. Push Prisma schema lên Supabase
 cd backend && npm run db:push
@@ -186,7 +187,7 @@ cd .. && npm run dev
 ### Backend
 ```bash
 # Runtime
-@supabase/supabase-js  # Supabase client (service_role)
+@supabase/supabase-js  # Supabase client (secret key)
 @prisma/client         # Type-safe DB queries
 express                # HTTP server
 express-session        # Session management
