@@ -9,6 +9,8 @@
 | 💼 **Business Reviewer** | [agents/business-reviewer.md](agents/business-reviewer.md) | Đánh giá business logic, revenue, market fit, growth |
 | 🎯 **Project Manager** | [agents/project-manager.md](agents/project-manager.md) | Điều phối team, planning, tổng hợp review, quyết định |
 | 🔥 **Debugger** | [agents/debugger.md](agents/debugger.md) | Senior dev chuyên debug — systematic root cause analysis, không đoán mò |
+| 🔍 **Code Reviewer** | [agents/code-reviewer.md](agents/code-reviewer.md) | Bắt bẻ code quality — type safety, React patterns, performance, error handling |
+| 📝 **Scribe** | [agents/scribe.md](agents/scribe.md) | Ghi chép hoạt động team, lưu notes tại .opencode/notes/ |
 
 ## Skills
 
@@ -40,16 +42,22 @@ Feature Request
     ▼
 🎯 Project Manager — Điều phối review
     │
+    ├──→ 🔍 Code Reviewer — Bắt bẻ code quality
     ├──→ 🎨 UI Reviewer — Visual audit
     ├──→ 👤 UX Reviewer — Usability audit
     └──→ 💼 Business Reviewer — Business audit
+    │
+    ▼
+📝 Scribe — Ghi session notes
     │
     ▼
 🎯 Project Manager — Tổng hợp, quyết định
     │
     ▼
 ✅ Approve / ❌ Block + Action Items
-
+    │
+    ▼
+📝 Scribe — Ghi session notes
 
 Bug / Lỗi xảy ra
     │

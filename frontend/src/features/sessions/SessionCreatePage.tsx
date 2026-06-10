@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { FC } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -7,6 +7,7 @@ import {
   Button,
   Card,
   CardContent,
+  CircularProgress,
   Divider,
   InputAdornment,
   Switch,
@@ -17,10 +18,16 @@ import {
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
+  CalendarMonth as CalendarIcon,
+  Paid as PaidIcon,
+  CheckCircle as CheckCircleIcon,
+  PersonAdd as PersonAddIcon,
   Search as SearchIcon,
   SelectAll as SelectAllIcon,
 } from '@mui/icons-material';
-import { mockGroupMembers } from '../../mocks/data';
+import { membersService } from '../../services/members.service';
+import { sessionsService } from '../../services/sessions.service';
+import type { GroupMember } from '../../types';
 import {
   formatVND,
   getInitials,
@@ -31,7 +38,7 @@ import {
 
 // ─── Section Card wrapper ─────────────────────────────────────────────────────
 
-const SectionCard: FC<{ title: string; icon?: string; children: React.ReactNode }> = ({
+const SectionCard: FC<{ title: string; icon?: React.ReactNode; children: React.ReactNode }> = ({
   title,
   icon,
   children,
@@ -67,6 +74,17 @@ const SectionCard: FC<{ title: string; icon?: string; children: React.ReactNode 
 export const SessionCreatePage: FC = () => {
   const navigate = useNavigate();
 
+  // Members state
+  const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    membersService.list()
+      .then((res) => setGroupMembers(res.data))
+      .catch(() => setGroupMembers([]))
+      .finally(() => setLoading(false));
+  }, []);
+
   // Form state
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [note, setNote] = useState('');
@@ -74,10 +92,18 @@ export const SessionCreatePage: FC = () => {
   const [shuttlecockQty, setShuttlecockQty] = useState('12');
   const [shuttlecockPrice, setShuttlecockPrice] = useState('25000');
   const [search, setSearch] = useState('');
-  const [attendance, setAttendance] = useState<Record<string, boolean>>(
-    Object.fromEntries(mockGroupMembers.map((gm) => [gm.id, gm.type === 'fixed']))
-  );
+  const [attendance, setAttendance] = useState<Record<string, boolean>>({});
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState('');
+
+  // Init attendance when members load
+  useEffect(() => {
+    if (groupMembers.length > 0 && Object.keys(attendance).length === 0) {
+      setAttendance(
+        Object.fromEntries(groupMembers.map((gm) => [gm.id, gm.type === 'fixed']))
+      );
+    }
+  }, [groupMembers, attendance]);
 
   // Derived calculations
   const courtFeeNum = Number(courtFee) || 0;
@@ -91,10 +117,10 @@ export const SessionCreatePage: FC = () => {
 
   const filteredMembers = useMemo(
     () =>
-      mockGroupMembers.filter((gm) =>
+      groupMembers.filter((gm) =>
         gm.member.displayName.toLowerCase().includes(search.toLowerCase())
       ),
-    [search]
+    [groupMembers, search]
   );
 
   const toggleMember = (id: string) =>
@@ -103,14 +129,34 @@ export const SessionCreatePage: FC = () => {
   const selectAllFixed = () =>
     setAttendance((prev) =>
       Object.fromEntries(
-        mockGroupMembers.map((gm) => [gm.id, gm.type === 'fixed' || prev[gm.id]])
+        groupMembers.map((gm) => [gm.id, gm.type === 'fixed' || prev[gm.id]])
       )
     );
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => navigate('/sessions'), 800);
+  const handleSave = async () => {
+    setSaveError('');
+    try {
+      await sessionsService.create({
+        date,
+        courtFee: courtFeeNum,
+        shuttlecockQty: shuttlecockQtyNum,
+        shuttlecockPrice: shuttlecockPriceNum,
+        note: note || undefined,
+      });
+      setSaved(true);
+      setTimeout(() => navigate('/sessions'), 800);
+    } catch (err: unknown) {
+      setSaveError(err instanceof Error ? err.message : 'Lỗi không xác định');
+    }
   };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ pb: 2 }}>
@@ -132,9 +178,14 @@ export const SessionCreatePage: FC = () => {
           Đã lưu buổi tập thành công!
         </Alert>
       )}
+      {saveError && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {saveError}
+        </Alert>
+      )}
 
       {/* Section 1: Thông tin buổi tập */}
-      <SectionCard title="Thông tin buổi tập" icon="📅">
+      <SectionCard title="Thông tin buổi tập" icon={<CalendarIcon />}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <TextField
             label="Chọn ngày tập"
@@ -155,7 +206,7 @@ export const SessionCreatePage: FC = () => {
       </SectionCard>
 
       {/* Section 2: Chi phí */}
-      <SectionCard title="Chi phí" icon="💰">
+      <SectionCard title="Chi phí" icon={<PaidIcon />}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <TextField
             label="Tiền sân (VNĐ)"
@@ -211,7 +262,7 @@ export const SessionCreatePage: FC = () => {
       </SectionCard>
 
       {/* Section 3: Điểm danh */}
-      <SectionCard title={`Điểm danh (${presentCount}/${mockGroupMembers.length})`} icon="✅">
+      <SectionCard title={`Điểm danh (${presentCount}/${groupMembers.length})`} icon={<CheckCircleIcon />}>
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1, mb: 2 }}>
           <TextField
             size="small"
@@ -293,7 +344,7 @@ export const SessionCreatePage: FC = () => {
 
         <Button
           variant="text"
-          startIcon={<span>👤+</span>}
+          startIcon={<PersonAddIcon />}
           fullWidth
           sx={{ mt: 1, color: 'primary.main', minHeight: 44, fontSize: '0.875rem' }}
         >

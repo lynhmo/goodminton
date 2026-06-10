@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { FC } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -7,6 +7,12 @@ import {
   Card,
   CardContent,
   Chip,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   IconButton,
   InputAdornment,
   Menu,
@@ -23,6 +29,7 @@ import {
   Typography,
   Button,
   Alert,
+  Snackbar,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
@@ -40,7 +47,7 @@ import {
   getAvatarColor,
   getAvatarTextColor,
 } from '../../utils/format';
-import { mockGroupMembers } from '../../mocks/data';
+import { membersService } from '../../services/members.service';
 import type { GroupMember } from '../../types';
 import { AddMemberDialog } from './AddMemberDialog';
 import type { MemberFormData } from './AddMemberDialog';
@@ -191,11 +198,23 @@ export const MembersPage: FC = () => {
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const navigate = useNavigate();
 
-  const [members, setMembers] = useState<GroupMember[]>(mockGroupMembers);
+  const [members, setMembers] = useState<GroupMember[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<GroupMember | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<GroupMember | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  useEffect(() => {
+    membersService.list()
+      .then((res) => setMembers(res.data))
+      .catch((err: Error) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
 
   const filtered = members.filter((gm) =>
     gm.member.displayName.toLowerCase().includes(search.toLowerCase()) ||
@@ -207,41 +226,17 @@ export const MembersPage: FC = () => {
   const fixedCount = members.filter((m) => m.type === 'fixed').length;
   const guestCount = members.filter((m) => m.type === 'guest').length;
 
-  const handleSave = (data: MemberFormData) => {
-    if (editTarget) {
-      setMembers((prev) =>
-        prev.map((gm) =>
-          gm.id === editTarget.id
-            ? {
-                ...gm,
-                type: data.type,
-                balance: data.initialBalance,
-                member: { ...gm.member, displayName: data.displayName, phone: data.phone },
-              }
-            : gm
-        )
-      );
-    } else {
-      const newGm: GroupMember = {
-        id: `gm-${Date.now()}`,
-        memberId: `m-${Date.now()}`,
-        groupId: 'g1',
-        role: 'member',
+  const handleSave = async (data: MemberFormData) => {
+    try {
+      await membersService.add({
+        identifier: data.phone,
         type: data.type,
-        balance: data.initialBalance,
-        status: 'active',
-        member: {
-          id: `m-${Date.now()}`,
-          displayName: data.displayName,
-          username: `user_${Date.now()}`,
-          phone: data.phone,
-          email: '',
-          provider: 'local',
-          status: 'active',
-          createdAt: new Date().toISOString(),
-        },
-      };
-      setMembers((prev) => [newGm, ...prev]);
+      });
+      // Refresh list
+      const res = await membersService.list();
+      setMembers(res.data);
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : 'Lỗi không xác định');
     }
     setEditTarget(null);
   };
@@ -251,8 +246,22 @@ export const MembersPage: FC = () => {
     setDialogOpen(true);
   };
 
-  const handleDelete = (gm: GroupMember) => {
-    setMembers((prev) => prev.filter((m) => m.id !== gm.id));
+  const handleDeleteClick = (gm: GroupMember) => {
+    setDeleteTarget(gm);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    try {
+      await membersService.remove(deleteTarget.memberId);
+      setMembers((prev) => prev.filter((m) => m.id !== deleteTarget.id));
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : 'Lỗi không xác định');
+    } finally {
+      setDeleteLoading(false);
+      setDeleteTarget(null);
+    }
   };
 
   return (
@@ -307,6 +316,23 @@ export const MembersPage: FC = () => {
         )}
       </Box>
 
+      {/* Loading */}
+      {loading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <CircularProgress />
+        </Box>
+      )}
+
+      {/* Error */}
+      {!loading && error && (
+        <Box sx={{ textAlign: 'center', py: 8 }}>
+          <Typography variant="body2" sx={{ color: 'error.main' }}>{error}</Typography>
+          <Button onClick={() => window.location.reload()} sx={{ mt: 2 }}>Thử lại</Button>
+        </Box>
+      )}
+
+      {!loading && !error && (
+        <>
       {/* Stat chips */}
       <Box sx={{ display: 'flex', gap: 1.5, mb: 2.5, overflowX: 'auto', pb: 0.5 }}>
         {[
@@ -337,7 +363,7 @@ export const MembersPage: FC = () => {
               key={gm.id}
               groupMember={gm}
               onEdit={handleEdit}
-              onDelete={handleDelete}
+               onDelete={handleDeleteClick}
             />
           ))}
         </Box>
@@ -456,6 +482,39 @@ export const MembersPage: FC = () => {
             : undefined
         }
       />
+
+      {/* Delete Confirm Dialog */}
+      <Dialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+      >
+        <DialogTitle>Xác nhận xóa</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Bạn có chắc muốn xóa thành viên <strong>{deleteTarget?.member.displayName}</strong> khỏi nhóm?
+            Thành viên sẽ được đặt trạng thái không hoạt động.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteTarget(null)}>Hủy</Button>
+          <Button onClick={handleDeleteConfirm} color="error" disabled={deleteLoading}>
+            {deleteLoading ? 'Đang xóa...' : 'Xóa'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Error Snackbar */}
+      <Snackbar
+        open={!!errorMsg}
+        autoHideDuration={5000}
+        onClose={() => setErrorMsg('')}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity="error" onClose={() => setErrorMsg('')} sx={{ width: '100%' }}>
+          {errorMsg}
+        </Alert>
+      </Snackbar>
+      </>
     </Box>
   );
 };

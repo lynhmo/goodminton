@@ -84,10 +84,17 @@ sessionsRouter.post('/', requireAdmin, async (req, res) => {
 
 // PATCH /api/sessions/:id — Cập nhật buổi (admin, chỉ khi draft/pending)
 sessionsRouter.patch('/:id', requireAdmin, async (req, res) => {
+  const body = req.body as Record<string, unknown>;
+  // Block direct status change to 'settled' — must use POST /:id/settle
+  if (body.status === 'settled') {
+    res.status(403).json({ error: 'Không thể tự chốt buổi qua PATCH. Dùng API settle.' });
+    return;
+  }
+
   const allowed = ['court_fee', 'shuttlecock_qty', 'shuttlecock_price', 'note', 'status'];
   const updates: Record<string, unknown> = {};
   for (const key of allowed) {
-    if (key in req.body) updates[key] = (req.body as Record<string, unknown>)[key];
+    if (key in body) updates[key] = body[key];
   }
 
   const { data, error } = await supabase
@@ -141,32 +148,40 @@ sessionsRouter.post('/:id/settle', requireAdmin, async (req, res) => {
     return;
   }
 
-  const totalCost: number = session.total_cost ?? session.court_fee + session.shuttlecock_qty * session.shuttlecock_price;
+  const totalCost = session.total_cost ?? session.court_fee + session.shuttlecock_qty * session.shuttlecock_price;
   const count = attendees.length;
 
   // Làm tròn xuống theo đơn vị 1000đ
   const perPerson = Math.floor(totalCost / count / 1000) * 1000;
   const remainder = totalCost - perPerson * count;
 
-  // Trừ tiền từng người
+  // Kiểm tra tất cả attendees tồn tại trong group_members trước khi trừ tiền
+  const memberIds = attendees.map((a) => a.member_id);
+  const { data: allGms } = await supabase
+    .from('group_members')
+    .select('id, member_id, balance')
+    .eq('group_id', req.session.groupId)
+    .in('member_id', memberIds);
+
+  const missingIds = memberIds.filter(
+    (mid) => !allGms?.some((gm) => gm.member_id === mid),
+  );
+  if (missingIds.length > 0) {
+    res.status(400).json({ error: `Một số thành viên không có trong nhóm: ${missingIds.join(', ')}` });
+    return;
+  }
+
+  // Batch update group_members + insert transactions + update attendance
+  const gmMap = new Map(allGms!.map((gm) => [gm.member_id, gm]));
+  const updates: Array<{ id: string; balance: number }> = [];
+  const txnInserts: Array<Record<string, unknown>> = [];
+  const attUpdates: Array<{ id: string; amount_charged: number }> = [];
+
   for (const att of attendees) {
-    const { data: gm } = await supabase
-      .from('group_members')
-      .select('id, balance')
-      .eq('group_id', req.session.groupId)
-      .eq('member_id', att.member_id)
-      .single();
-
-    if (!gm) continue;
-
+    const gm = gmMap.get(att.member_id)!;
     const newBalance = gm.balance - perPerson;
-
-    await supabase
-      .from('group_members')
-      .update({ balance: newBalance })
-      .eq('id', gm.id);
-
-    await supabase.from('transactions').insert({
+    updates.push({ id: gm.id, balance: newBalance });
+    txnInserts.push({
       group_member_id: gm.id,
       session_id: sessionId,
       type: 'session_charge',
@@ -174,18 +189,23 @@ sessionsRouter.post('/:id/settle', requireAdmin, async (req, res) => {
       balance_after: newBalance,
       note: `Buổi tập ${session.date}`,
     });
-
-    await supabase
-      .from('attendance')
-      .update({ amount_charged: perPerson })
-      .eq('id', att.id);
+    attUpdates.push({ id: att.id, amount_charged: perPerson });
   }
 
-  // Cập nhật session
-  await supabase
-    .from('sessions')
-    .update({ status: 'settled', per_person: perPerson, remainder, attendee_count: count })
-    .eq('id', sessionId);
+  // Execute all updates in parallel
+  await Promise.all([
+    ...updates.map((u) =>
+      supabase.from('group_members').update({ balance: u.balance }).eq('id', u.id),
+    ),
+    supabase.from('transactions').insert(txnInserts),
+    ...attUpdates.map((a) =>
+      supabase.from('attendance').update({ amount_charged: a.amount_charged }).eq('id', a.id),
+    ),
+    supabase
+      .from('sessions')
+      .update({ status: 'settled', per_person: perPerson, remainder, attendee_count: count })
+      .eq('id', sessionId),
+  ]);
 
   res.json({ success: true, perPerson, remainder, attendeeCount: count });
 });

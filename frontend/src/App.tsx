@@ -1,6 +1,6 @@
 import type { FC } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import { ThemeProvider, CssBaseline } from '@mui/material';
+import { ThemeProvider, CssBaseline, CircularProgress, Box } from '@mui/material';
 import theme from './theme/theme';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { AppShell } from './components/layout/AppShell';
@@ -20,7 +20,14 @@ import { RankingsPage } from './features/rankings/RankingsPage';
 // ─── Auth Guard ───────────────────────────────────────────────────────────────
 
 const AuthGuard: FC = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
+  if (isLoading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   return (
     <AppShell>

@@ -37,7 +37,7 @@ export const AppShell: FC<AppShellProps> = ({ children }) => {
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
       {/* Desktop Sidebar — visible md+ */}
-      <Box sx={{ display: { xs: 'none', md: 'block' }, width: 240, flexShrink: 0 }}>
+      <Box sx={{ display: { xs: 'none', sm: 'none', md: 'block' }, width: 240, flexShrink: 0 }}>
         <Sidebar currentPath={location.pathname} onNavigate={navigate} />
       </Box>
 
@@ -54,8 +54,8 @@ export const AppShell: FC<AppShellProps> = ({ children }) => {
           overflowX: 'hidden',
         }}
       >
-        {/* Mobile AppBar — visible xs only */}
-        <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+        {/* Mobile AppBar — visible below md */}
+        <Box sx={{ display: { xs: 'block', sm: 'block', md: 'none' } }}>
           <MobileAppBar />
         </Box>
 
@@ -63,9 +63,9 @@ export const AppShell: FC<AppShellProps> = ({ children }) => {
         <Box
           sx={{
             flex: 1,
-            px: { xs: 2, md: 3 },
-            pt: { xs: 2, md: 3 },
-            pb: { xs: 10, md: 3 }, // extra bottom padding for BottomNav on mobile
+            px: { xs: 2, sm: 2, md: 3 },
+            pt: { xs: 2, sm: 2, md: 3 },
+            pb: { xs: 'calc(64px + env(safe-area-inset-bottom, 0px))', sm: 'calc(64px + env(safe-area-inset-bottom, 0px))', md: 3 },
             maxWidth: { md: 1200 },
             width: '100%',
             boxSizing: 'border-box',
@@ -76,8 +76,8 @@ export const AppShell: FC<AppShellProps> = ({ children }) => {
           {children}
         </Box>
 
-        {/* Mobile BottomNav — visible xs only */}
-        <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+        {/* Mobile BottomNav — visible below md */}
+        <Box sx={{ display: { xs: 'block', sm: 'block', md: 'none' } }}>
           <Paper
             elevation={0}
             sx={{
@@ -89,6 +89,7 @@ export const AppShell: FC<AppShellProps> = ({ children }) => {
               maxWidth: '100vw',
               overflowX: 'hidden',
               zIndex: 1100,
+              pb: 'env(safe-area-inset-bottom, 0px)',
             }}
           >
             <BottomNavigation
@@ -126,12 +127,12 @@ export const AppShell: FC<AppShellProps> = ({ children }) => {
                       outline: 'none',
                     },
                     '&:focus-visible': {
-                      outline: 'none',
+                      outline: '2px solid',
+                      outlineColor: 'primary.main',
+                      outlineOffset: 2,
                     },
                     '&.Mui-selected': {
                       color: 'primary.main',
-                      border: 0,
-                      outline: 'none',
                     },
                   }}
                 />

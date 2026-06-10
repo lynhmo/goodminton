@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import type { FC } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -7,6 +8,7 @@ import {
   Typography,
   Avatar,
   Chip,
+  CircularProgress,
   Divider,
   Button,
   List,
@@ -22,8 +24,10 @@ import {
   Add as AddIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
-import { mockSessions, mockGroupMembers, mockGroup } from '../../mocks/data';
-import { formatVND, getInitials, getAvatarColor, getAvatarTextColor } from '../../utils/format';
+import { sessionsService } from '../../services/sessions.service';
+import { membersService } from '../../services/members.service';
+import { formatVND, formatDate, getInitials, getAvatarColor, getAvatarTextColor } from '../../utils/format';
+import type { Session, GroupMember } from '../../types';
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
 
@@ -87,41 +91,33 @@ export const DashboardPage: FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const totalMembers = mockGroupMembers.length;
-  const fixedMembers = mockGroupMembers.filter((m) => m.type === 'fixed').length;
-  const totalBalance = mockGroupMembers.reduce((sum, m) => sum + m.balance, 0);
-  const sessionsThisMonth = mockSessions.filter((s) => {
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [members, setMembers] = useState<GroupMember[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      sessionsService.list(),
+      membersService.list(),
+    ])
+      .then(([sessRes, memRes]) => {
+        setSessions(sessRes.data);
+        setMembers(memRes.data);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const totalMembers = members.length;
+  const fixedMembers = members.filter((m) => m.type === 'fixed').length;
+  const totalBalance = members.reduce((sum, m) => sum + m.balance, 0);
+  const now = new Date();
+  const sessionsThisMonth = sessions.filter((s) => {
     const d = new Date(s.date);
-    const now = new Date();
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   }).length;
 
-  const nextSession = mockSessions.find((s) => s.status === 'pending');
-
-  // Recent activity items (simulated)
-  const recentActivities = [
-    {
-      id: 'a1',
-      avatar: mockGroupMembers[1].member,
-      text: `${mockGroupMembers[1].member.displayName} vừa nộp tiền quỹ tháng 5`,
-      time: '10 phút trước',
-      amount: '+200.000đ',
-      amountColor: 'primary.main',
-    },
-    {
-      id: 'a2',
-      avatar: null,
-      text: 'Buổi tập sáng Thứ 7 đã hoàn thành',
-      time: 'Hôm qua, 11:30',
-      badge: '12 Người',
-    },
-    {
-      id: 'a3',
-      avatar: mockGroupMembers[4].member,
-      text: `${mockGroupMembers[4].member.displayName} đã cập nhật lịch tập mới`,
-      time: '2 giờ trước',
-    },
-  ];
+  const nextSession = sessions.find((s) => s.status === 'pending');
 
   return (
     <Box sx={{ width: '100%', maxWidth: '100%', overflowX: 'hidden' }}>
@@ -146,6 +142,15 @@ export const DashboardPage: FC = () => {
         </Box>
       </Box>
 
+      {/* Loading */}
+      {loading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <CircularProgress />
+        </Box>
+      )}
+
+      {!loading && (
+        <>
       {/* Stat Cards */}
       <Box
         sx={{
@@ -166,7 +171,7 @@ export const DashboardPage: FC = () => {
           icon={<WalletIcon sx={{ fontSize: 20 }} />}
           label="Số dư quỹ nhóm (VNĐ)"
           value={formatVND(totalBalance)}
-          sub="↑ +15% so với tháng trước"
+          sub={totalBalance > 0 ? `Quỹ nhóm: ${formatVND(totalBalance)}` : undefined}
         />
         <StatCard
           icon={<PeopleIcon sx={{ fontSize: 20 }} />}
@@ -208,10 +213,10 @@ export const DashboardPage: FC = () => {
                   }}
                 >
                   <Typography variant="body2" sx={{ color: '#fff', fontWeight: 600 }}>
-                    {mockGroup.schedule?.split('—').pop()?.trim() ?? 'Thứ 3, 19:00 tại Sân A'}
+                    {formatDate(nextSession.date)} — {formatVND(nextSession.totalCost)}
                   </Typography>
                   <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)' }}>
-                    Đã có 8 thành viên đăng ký
+                    {nextSession.attendeeCount > 0 ? `${nextSession.attendeeCount} thành viên` : 'Chưa có điểm danh'}
                   </Typography>
                 </Box>
               </CardContent>
@@ -229,60 +234,46 @@ export const DashboardPage: FC = () => {
               </Box>
               <Divider />
               <List disablePadding>
-                {recentActivities.map((activity, idx) => (
-                  <Box key={activity.id}>
-                    <ListItem sx={{ px: 2, py: 1.5, alignItems: 'flex-start' }}>
-                      <ListItemAvatar sx={{ minWidth: 44 }}>
-                        {activity.avatar ? (
-                          <Avatar
-                            sx={{
-                              width: 36,
-                              height: 36,
-                              bgcolor: getAvatarColor(activity.avatar.displayName),
-                              color: getAvatarTextColor(activity.avatar.displayName),
-                              fontSize: '0.75rem',
-                              fontWeight: 600,
-                            }}
-                          >
-                            {getInitials(activity.avatar.displayName)}
-                          </Avatar>
-                        ) : (
+                {sessions.length === 0 ? (
+                  <Box sx={{ py: 4, textAlign: 'center' }}>
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                      Chưa có hoạt động nào.
+                    </Typography>
+                  </Box>
+                ) : (
+                  sessions.slice(0, 5).map((session, idx) => (
+                    <Box key={session.id}>
+                      <ListItem sx={{ px: 2, py: 1.5, alignItems: 'flex-start' }}>
+                        <ListItemAvatar sx={{ minWidth: 44 }}>
                           <Avatar sx={{ width: 36, height: 36, bgcolor: '#E8F5E9', color: 'primary.main' }}>
                             <CalendarIcon sx={{ fontSize: 18 }} />
                           </Avatar>
-                        )}
-                      </ListItemAvatar>
-                      <ListItemText
-                        sx={{ minWidth: 0 }}
-                        primary={
-                          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'flex-start' }, gap: 0.5, minWidth: 0 }}>
-                            <Typography variant="body2" sx={{ lineHeight: 1.4, minWidth: 0, overflowWrap: 'anywhere' }}>
-                              {activity.text}
-                            </Typography>
-                            {activity.amount && (
-                              <Typography variant="body2" sx={{ color: activity.amountColor, fontWeight: 600, flexShrink: 0 }}>
-                                {activity.amount}
+                        </ListItemAvatar>
+                        <ListItemText
+                          sx={{ minWidth: 0 }}
+                          primary={
+                            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'flex-start' }, gap: 0.5, minWidth: 0 }}>
+                              <Typography variant="body2" sx={{ lineHeight: 1.4, minWidth: 0, overflowWrap: 'anywhere' }}>
+                                Buổi tập {formatDate(session.date)}
                               </Typography>
-                            )}
-                            {activity.badge && (
                               <Chip
-                                label={activity.badge}
+                                label={session.status === 'settled' ? 'Hoàn tất' : session.status === 'pending' ? 'Chờ xử lý' : 'Bản nháp'}
                                 size="small"
                                 sx={{ bgcolor: '#E8F5E9', color: 'primary.main' }}
                               />
-                            )}
-                          </Box>
-                        }
-                        secondary={
-                          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                            {activity.time}
-                          </Typography>
-                        }
-                      />
-                    </ListItem>
-                    {idx < recentActivities.length - 1 && <Divider component="li" />}
-                  </Box>
-                ))}
+                            </Box>
+                          }
+                          secondary={
+                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                              {session.attendeeCount} người — {formatVND(session.totalCost)}
+                            </Typography>
+                          }
+                        />
+                      </ListItem>
+                      {idx < Math.min(sessions.length, 5) - 1 && <Divider component="li" />}
+                    </Box>
+                  ))
+                )}
               </List>
             </CardContent>
           </Card>
@@ -376,6 +367,8 @@ export const DashboardPage: FC = () => {
           <AddIcon />
         </Button>
       </Box>
+      </>
+      )}
     </Box>
   );
 };

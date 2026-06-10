@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import type { FC } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
@@ -7,10 +8,8 @@ import {
   Card,
   CardContent,
   Chip,
+  CircularProgress,
   Divider,
-  List,
-  ListItem,
-  ListItemText,
   Typography,
 } from '@mui/material';
 import {
@@ -24,13 +23,32 @@ import {
   getAvatarColor,
   getAvatarTextColor,
 } from '../../utils/format';
-import { mockGroupMembers, mockTransactions } from '../../mocks/data';
+import { membersService } from '../../services/members.service';
+import type { GroupMember } from '../../types';
 
 export const MemberDetailPage: FC = () => {
   const { memberId } = useParams<{ memberId: string }>();
   const navigate = useNavigate();
 
-  const groupMember = mockGroupMembers.find((gm) => gm.memberId === memberId);
+  const [groupMember, setGroupMember] = useState<GroupMember | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!memberId) return;
+    membersService.getById(memberId)
+      .then((res) => setGroupMember(res.data))
+      .catch(() => setGroupMember(null))
+      .finally(() => setLoading(false));
+  }, [memberId]);
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   if (!groupMember) {
     return (
       <Box sx={{ textAlign: 'center', py: 8 }}>
@@ -46,14 +64,6 @@ export const MemberDetailPage: FC = () => {
 
   const { member, type, balance, role } = groupMember;
   const isNeg = balance < 0;
-  const transactions = mockTransactions.filter((t) => t.groupMemberId === groupMember.id);
-
-  const typeLabel = {
-    session_charge: 'Trừ tiền buổi tập',
-    deposit: 'Nộp tiền quỹ',
-    refund: 'Hoàn tiền',
-    adjustment: 'Điều chỉnh',
-  };
 
   return (
     <Box>
@@ -127,51 +137,11 @@ export const MemberDetailPage: FC = () => {
       <Typography variant="h5" sx={{ mb: 1.5 }}>Lịch sử giao dịch</Typography>
       <Card>
         <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>
-          {transactions.length === 0 ? (
-            <Box sx={{ py: 4, textAlign: 'center' }}>
-              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                Chưa có giao dịch nào.
-              </Typography>
-            </Box>
-          ) : (
-            <List disablePadding>
-              {transactions.map((t, idx) => {
-                const isPos = t.amount > 0;
-                return (
-                  <Box key={t.id}>
-                    <ListItem sx={{ px: 2, py: 1.5 }}>
-                      <ListItemText
-                        primary={
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                              {typeLabel[t.type]}
-                            </Typography>
-                            <Typography
-                              variant="body2"
-                              sx={{ fontWeight: 700, color: isPos ? 'primary.main' : 'error.main', flexShrink: 0, ml: 1 }}
-                            >
-                              {isPos ? '+' : ''}{formatVND(t.amount)}
-                            </Typography>
-                          </Box>
-                        }
-                        secondary={
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.25 }}>
-                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                              {t.note}
-                            </Typography>
-                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                              Số dư: {formatVND(t.balanceAfter)}
-                            </Typography>
-                          </Box>
-                        }
-                      />
-                    </ListItem>
-                    {idx < transactions.length - 1 && <Divider component="li" />}
-                  </Box>
-                );
-              })}
-            </List>
-          )}
+          <Box sx={{ py: 4, textAlign: 'center' }}>
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              Chưa có giao dịch nào.
+            </Typography>
+          </Box>
         </CardContent>
       </Card>
     </Box>

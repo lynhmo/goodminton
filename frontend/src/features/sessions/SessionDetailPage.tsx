@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { FC } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
@@ -8,6 +8,7 @@ import {
   Card,
   CardContent,
   Chip,
+  CircularProgress,
   Divider,
   IconButton,
   List,
@@ -16,6 +17,7 @@ import {
   ListItemText,
   TextField,
   Typography,
+  Alert,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -25,8 +27,8 @@ import {
   Remove as RemoveIcon,
 } from '@mui/icons-material';
 import { formatVND, formatDate, getInitials, getAvatarColor, getAvatarTextColor, calcPerPerson } from '../../utils/format';
-import { mockSessions } from '../../mocks/data';
-import type { SessionStatus } from '../../types';
+import { sessionsService } from '../../services/sessions.service';
+import type { Session, SessionStatus } from '../../types';
 
 const statusMeta: Record<SessionStatus, { label: string; color: string; bg: string }> = {
   draft: { label: 'Bản nháp', color: '#757575', bg: '#F5F5F5' },
@@ -38,7 +40,33 @@ export const SessionDetailPage: FC = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
 
-  const session = mockSessions.find((s) => s.id === sessionId);
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [settling, setSettling] = useState(false);
+  const [settleError, setSettleError] = useState('');
+
+  useEffect(() => {
+    if (!sessionId) return;
+    sessionsService.getById(sessionId)
+      .then((res) => setSession(res.data))
+      .catch(() => setSession(null))
+      .finally(() => setLoading(false));
+  }, [sessionId]);
+
+  // Editable shuttlecock qty — only used when pending
+  const [shuttlecockQty, setShuttlecockQty] = useState(0);
+
+  useEffect(() => {
+    if (session) setShuttlecockQty(session.shuttlecockQty);
+  }, [session]);
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   if (!session) {
     return (
@@ -49,8 +77,6 @@ export const SessionDetailPage: FC = () => {
     );
   }
 
-  // Editable shuttlecock qty — only used when pending
-  const [shuttlecockQty, setShuttlecockQty] = useState(session.shuttlecockQty);
   const isPending = session.status === 'pending';
 
   // Derived cost calculations
@@ -75,8 +101,27 @@ export const SessionDetailPage: FC = () => {
     setShuttlecockQty(clamped);
   };
 
+  const handleSettle = async () => {
+    setSettleError('');
+    setSettling(true);
+    try {
+      const res = await sessionsService.settle(session.id);
+      setSession((prev) => prev ? {
+        ...prev,
+        status: 'settled',
+        perPerson: res.perPerson,
+        remainder: res.remainder,
+        attendeeCount: res.attendeeCount,
+      } : prev);
+    } catch (err: unknown) {
+      setSettleError(err instanceof Error ? err.message : 'Lỗi không xác định');
+    } finally {
+      setSettling(false);
+    }
+  };
+
   const meta = statusMeta[session.status];
-  const allMembers = mockSessions.find((s) => s.id === 's1')?.attendances ?? [];
+  const allAttendances = session.attendances ?? [];
 
   return (
     <Box>
@@ -222,7 +267,7 @@ export const SessionDetailPage: FC = () => {
 
       {/* Attendances */}
       <Typography variant="h5" sx={{ mb: 1.5 }}>
-        Điểm danh ({session.attendeeCount}/{allMembers.length + 2} thành viên)
+        Điểm danh ({allAttendances.filter(a => a.isPresent).length}/{allAttendances.length} thành viên)
       </Typography>
       <Card>
         <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>
@@ -251,7 +296,7 @@ export const SessionDetailPage: FC = () => {
                     </ListItemAvatar>
                     <ListItemText
                       primary={att.member.displayName}
-                      slotProps={{ primary: { variant: 'body2', fontWeight: 500 } as object }}
+                      slotProps={{ primary: { variant: 'body2', fontWeight: 500 } }}
                       secondary={
                         att.isPresent && att.amountCharged > 0
                           ? `Trừ: ${formatVND(att.amountCharged)}`
@@ -272,10 +317,24 @@ export const SessionDetailPage: FC = () => {
         </CardContent>
       </Card>
 
+      {/* Settle error */}
+      {settleError && (
+        <Alert severity="error" sx={{ mt: 2 }}>
+          {settleError}
+        </Alert>
+      )}
+
       {/* Action for pending session */}
       {isPending && (
-        <Button variant="contained" fullWidth size="large" sx={{ mt: 3 }}>
-          Xác nhận &amp; Trừ tiền
+        <Button
+          variant="contained"
+          fullWidth
+          size="large"
+          sx={{ mt: 3 }}
+          onClick={handleSettle}
+          disabled={settling}
+        >
+          {settling ? 'Đang xử lý...' : 'Xác nhận &amp; Trừ tiền'}
         </Button>
       )}
     </Box>

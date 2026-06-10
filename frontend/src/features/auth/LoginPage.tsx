@@ -4,9 +4,7 @@ import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import {
   Box,
   Button,
-  Checkbox,
   Divider,
-  FormControlLabel,
   IconButton,
   InputAdornment,
   Link,
@@ -17,6 +15,7 @@ import {
 import {
   Visibility,
   VisibilityOff,
+  Lock as LockIcon,
   SportsTennis as BadmintonIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
@@ -28,7 +27,6 @@ export const LoginPage: FC = () => {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -39,8 +37,8 @@ export const LoginPage: FC = () => {
     try {
       await login(identifier, password);
       navigate('/dashboard');
-    } catch {
-      setError('Đăng nhập thất bại. Vui lòng thử lại.');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Đăng nhập thất bại.');
     } finally {
       setLoading(false);
     }
@@ -129,7 +127,7 @@ export const LoginPage: FC = () => {
               input: {
                 startAdornment: (
                   <InputAdornment position="start">
-                    <Typography sx={{ color: 'text.secondary', fontSize: '1rem' }}>🔒</Typography>
+                    <LockIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
                   </InputAdornment>
                 ),
                 endAdornment: (
@@ -149,19 +147,8 @@ export const LoginPage: FC = () => {
           />
         </Box>
 
-        {/* Remember me + forgot pw */}
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 1.5, mb: 2 }}>
-          <FormControlLabel
-            control={
-              <Checkbox
-                size="small"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                sx={{ '&.Mui-checked': { color: 'primary.main' } }}
-              />
-            }
-            label={<Typography variant="body2">Ghi nhớ đăng nhập</Typography>}
-          />
+        {/* Forgot password */}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', mt: 1.5, mb: 2 }}>
           <Link component={RouterLink} to="/forgot-password" variant="body2" color="primary">
             Quên mật khẩu?
           </Link>

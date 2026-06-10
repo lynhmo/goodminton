@@ -12,6 +12,7 @@ import {
   MenuItem,
 } from '@mui/material';
 import { SportsTennis as BadmintonIcon } from '@mui/icons-material';
+import { authService } from '../../services/auth.service';
 
 export const RegisterPage: FC = () => {
   const navigate = useNavigate();
@@ -64,9 +65,18 @@ export const RegisterPage: FC = () => {
 
     setLoading(true);
     try {
-      // Fake register — just redirect to login
-      await new Promise((r) => setTimeout(r, 500));
+      await authService.register({
+        username: form.username,
+        password: form.password,
+        displayName: form.displayName,
+        phone: form.phone.replace(/\s/g, ''),
+        email: form.email || undefined,
+        inviteCode: form.inviteCode || undefined,
+        type: form.memberType as 'fixed' | 'guest',
+      });
       navigate('/login');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Đăng ký thất bại.');
     } finally {
       setLoading(false);
     }
